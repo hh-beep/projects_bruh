@@ -21,6 +21,9 @@ struct Pagamentos {
   
   float valorTotal;
 
+  int totalItems;
+
+  int totalPagamentos;
   char emAberto[1]; 
 };
 
@@ -65,16 +68,26 @@ struct Carrinho {
 
 struct Pagamentos* novoPagamento(   struct Pagamentos* listaPagamentos, struct Carrinho carrinhoCompras, int* contadorPagamentos, int tipoPagamento  );
 
+
+
+
 /*
 void starCarrinho(  struct Carrinho* carrinhoCompras  );
-
-void addCarrinho(  struct Carrinho* carrinhoCompras, struct Product produtoEscolhido, int quantidade  );
-
-void resetCarrinho(  struct Carrinho* CarrinhoCompras  );
 */
+void addCarrinho(  struct Carrinho* carrinhoCompras, struct Product* produtoEscolhido, int qnt  );
+
+void startCarrinho(  struct Carrinho** carrinhoCompras);
+
+void resetCarrinho(  struct Carrinho* carrinhoCompras  );
+
+
+
 
 
 void abrirCaixa(  float* valorCaixa, char* isOpenCaixa  );
+
+
+void retiradaCaixa(  float* valorCaixa  );
 
 
 #endif

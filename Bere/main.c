@@ -46,6 +46,8 @@ int main() {
   int opcaoMenu, opcaoSubMenu = 0;
 
 
+  // ~ Um start no carrinho (pra evitar erros e o sistema crashar)
+  startCarrinho(  &carrinhoCompras  );
 
 
 
@@ -81,7 +83,7 @@ int main() {
         }
 
         else {
-          menuVendas(  &opcaoSubMenu, &listaProdutos, contadorProdutos  );
+          menuVendas(  &listaPagamentos, carrinhoCompras, &listaProdutos, &opcaoSubMenu, &contadorPagamentos, contadorProdutos, &valorCaixa  );
         }
         
 
@@ -98,18 +100,19 @@ int main() {
         break;
 
       case 4:
-        // Fechamento
+        menuFechaCaixa(  listaPagamentos, contadorPagamentos, valorCaixa  );
         menuPrincipal(  &opcaoMenu  );
         break;
 
       case 5:
-        printf("Opt 5");
+        menuRelatorios(  listaPagamentos, contadorPagamentos  );
         menuPrincipal(  &opcaoMenu  );
         break;
       
       default:
         if (  contadorUsuarios > 0  ) {  exportUsuarios(  listaUsuarios, contadorUsuarios, userData  );  }
         if (  contadorProdutos > 0  ) {  exportProdutos(  listaProdutos, contadorProdutos, productData  );  }
+        
         
         break;
     } 
@@ -121,5 +124,6 @@ int main() {
   free(listaUsuarios);
   free(listaProdutos);
   free(listaPagamentos);
+  free(carrinhoCompras);
   return 0;
 }

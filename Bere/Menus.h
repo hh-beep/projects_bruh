@@ -17,18 +17,22 @@ void menuCadastros(  int* opcaoSubMenu, struct User** listaUsuarios, int* contad
 
 
 void menuVendasOpts(  int* opcaoSubMenu  );
-void menuVendasCompra(  struct Product** listaProdutos, int contadorProdutos  );
-void menuVendas(  int* opcaoSubMenu, struct Product** listaProdutos, int contadorProdutos   );
+void menuVendasCompra(  struct Carrinho* carrinhoCompras, struct Product** listaProdutos, int contadorProdutos  );
+void menuVendas(  
+    struct Pagamentos** listaPagamentos, struct Carrinho* carrinhoCompras, struct Product** listaProdutos, 
+    int* opcaoSubMenu, int* contadorPagamentos, int contadorProdutos, float *valorCaixa 
+);
+void verificarPagamentosAbertos(struct Pagamentos** listaPagamentos, int contadorPagamentos, struct Carrinho* carrinhoCompras);
 
 
 void menuAbertCaixaOpts(  int* opcaoSubMenu  );
 void menuAbertCaixa(  int* opcaoSubMenu, float* valorCaixa, char* isOpenCaixa  );
 
 
-void menuFechamentos();
+void menuFechaCaixa(  struct Pagamentos* listaPagamentos, int contadorPagamentos, float valorCaixa  );
 
 
-void menuRelatorios();
+void menuRelatorios(  struct Pagamentos* listaPagamentos, int contadorPagamentos  );
 
 
 #endif

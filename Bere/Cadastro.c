@@ -28,6 +28,9 @@
 */ 
 struct User* novoUsuario(  struct User** listaUsuarios, int* contadorUsuarios  ) {
 
+  int codigoValido = 0, codigoRepetido = 0;
+
+
 
   /*
    *  A variavel abaixo listaUsuario (que será uma variavel ponteiro criada no main.c) recebe
@@ -68,15 +71,34 @@ struct User* novoUsuario(  struct User** listaUsuarios, int* contadorUsuarios  )
   printf("\n\n");
 
 
+  // ~ Verificação se o codigo do usuario é valido (ou seja, se é entre 1000 e 9999 ou se não é repetido)
+  while (!codigoValido) {
+    printf("Digite o codigo do usuario [1000 a 9999]:\n => ");
+    scanf("%d", &((*listaUsuarios)[*contadorUsuarios].codigo));
 
-  printf("Digite o codigo do usuario [val. min: 1000 / val max: 9999]: \n => ");
-  scanf("%d", &((*listaUsuarios[*contadorUsuarios]).codigo));
-  printf("\n\n");
+    if ((*listaUsuarios)[*contadorUsuarios].codigo < 1000 || 
+        (*listaUsuarios)[*contadorUsuarios].codigo > 9999) {
+        printf("\nCódigo inválido! Digite um valor entre [1000] e [9999]\n");
+        continue;
+    }
 
+    codigoRepetido = 0;
+    for (int i = 0; i < *contadorUsuarios; i++) {
+        if ((*listaUsuarios)[i].codigo == (*listaUsuarios)[*contadorUsuarios].codigo) {
+            codigoRepetido = 1;
+            break;
+        }
+    }
 
+    if (codigoRepetido) {
+        printf("\nJá existe um usuário com esse código! Digite outro:\n");
+    } else {
+        codigoValido = 1;
+    }
+  } 
 
-  printf("Digite o nome social: \n => ");
   getchar();
+  printf("Digite o nome social: \n => ");
   scanf("%[^\n]", &(*listaUsuarios)[*contadorUsuarios].social);
   printf("\n\n");
 
@@ -234,7 +256,7 @@ struct Product* novoProduto (  struct Product** listaProdutos, int* contadorProd
 
         if (produtoAtual->codigo < 1000 || produtoAtual->codigo > 9999) {
             printf("\nCódigo inválido!\nDigite um valor entre [1000] e [9999]:\n => ");
-            continue;
+    
         }
 
         codigoRepetido = 0;
@@ -264,6 +286,11 @@ struct Product* novoProduto (  struct Product** listaProdutos, int* contadorProd
   // ~ do resultado
   printf("\nInforme a Categoria do Produto: \n [1]: Alimentos \n [2]: Materiais \n [3]: Padaria\n\n => ");
   scanf("%d", &categoria);
+
+  while((  categoria < 1  ) || (  categoria > 3  )) {
+    printf("\n\nCategoria Invalida!\n Digite novamente [entre 1 à 3]:\n => ");
+    scanf("%d", &categoria);
+  }
 
   switch (categoria) {
     case 1:
@@ -300,9 +327,19 @@ struct Product* novoProduto (  struct Product** listaProdutos, int* contadorProd
   scanf("%d", &produtoAtual->quant);
   printf("\n\n");
 
+  while(  produtoAtual->quant < 0  ) {
+    printf("\nQuantidade Invalida!\n Digite novamente:\n => ");
+    scanf("%d", &produtoAtual->quant);
+  }
+
   printf("Digite a quantidade de Estoque Minimo:\n => ");
   scanf("%d", &produtoAtual->quantMin);
   printf("\n\n");
+
+  while((  produtoAtual->quantMin < 0 ) || (  produtoAtual->quantMin > produtoAtual->quant  )) {
+    printf("\nQuantidade Invalida!\n Digite novamente [quant. min. tem que ser menor que a quantidade de estoque]:\n => ");
+    scanf("%d", &produtoAtual->quantMin);
+  }
 
 
 

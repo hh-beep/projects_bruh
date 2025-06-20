@@ -152,79 +152,72 @@ void menuVendasOpts(  int* opcaoSubMenu  ) {
 
 
 
-void menuVendasCompra(  struct Carrinho* carrinhoCompras, struct Product** listaProdutos, int contadorProdutos  ) {
-  
-  int getProduct;
-  int productId;
-  int hasProduct = 0;     // essa variavel serve para ajudar na verificação de se o usuario de fato escolheu algum produto.
+void menuVendasCompra(struct Carrinho* carrinhoCompras, struct Product** listaProdutos, int contadorProdutos) {
+    int codigoProduto, quantidade;
+    int produtoValido = 0;
 
-  
-  printf("\n\n\n");
-  printf("--- Comprar um novo Produto ---\n");
-  printf("  ~  \n\n\n");
-  printf("Cod.\t Nome\t Categoria\t Valor\t Quantidade\n\n");
-  for (  int i = 0; i < contadorProdutos; i++  ) {
-    printf("[%d]\t ", (*listaProdutos)[i].codigo);
-    printf("%s\t ", (*listaProdutos)[i].nome);
-    printf("%s\t ", (*listaProdutos)[i].category);
-    printf("%.2f\t ", (*listaProdutos)[i].precoVenda);
-    printf("%d\t\n ", (*listaProdutos)[i].quant);
-  }
-  printf("\n\n\n");
-  
-
-  printf("Qual item deseja ser comprado? [0: sair do menu]\n => ");
-  scanf("%d", &getProduct);
-  printf("\n\n");
-  
-
-  do {
-    for (  int i = 0; i < contadorProdutos; i++  ) {
-      // ~ aq só tá verificando se o produto escolhido ainda tem estoque (se o estoque for maior q zero ), entrando dnv o loop até sair 
-      if (  (*listaProdutos)[i].quant <= 0  ) {
-        // ~ uhhh, aqui não precisaria desse if e um while, poderia só ter o while em si, mas como lá em baixo já tá sendo usado um else if 
-        while (  (*listaProdutos)[i].quant <= 0 && (*listaProdutos)[i].codigo == getProduct  ) {
-          printf("\nO item escolhido não tem estoque!!!\n");
-          printf("Qual outro item vc deseja ser comprado? [0: sair do menu]\n => ");
-          scanf("%d", &getProduct);
-          printf("\n\n");
-        }
-      }  
-
-
-      // ~ Ele entrará nesta verificação se o houver algum produto com codigo digitado pelo usuario 
-      // ~ executando a função da compra já aqui dentro dessa verificação.
-      else if (  (*listaProdutos)[i].codigo == getProduct  && (*listaProdutos)[i].quant > 0  ) {
-      
-        int getQuant;
-        
-        printf("Qual será a quantidade de itens a serem compradas?\n => ");
-        scanf("%d", &getQuant);
-        printf("\n\n");
-
-
-        // ~ Loop de evitar quant invalida
-        while ((  getQuant > (*listaProdutos)[i].quant  ) || (  getQuant <= 0  )) {
-          printf("\n\nQuantidade Invalida!\nDigite a quantidade novamente (quant. disponivel: %d)\n => ", (*listaProdutos)[i].quant);
-          scanf("%d", &getQuant);
+    while (1) {
+        printf("\n--- Lista de Produtos Disponíveis ---\n");
+        printf("Código | Nome            | Categoria        | Preço R$ | Estoque\n");
+        printf("---------------------------------------------------------------\n");
+        for (int i = 0; i < contadorProdutos; i++) {
+            printf("%5d | %-15s | %-15s | %7.2f | %d\n",
+                (*listaProdutos)[i].codigo,
+                (*listaProdutos)[i].nome,
+                (*listaProdutos)[i].category,
+                (*listaProdutos)[i].precoVenda,
+                (*listaProdutos)[i].quant);
         }
 
-        addCarrinho(carrinhoCompras, &(*listaProdutos)[i], getQuant);
+        printf("\nInforme o código do produto a ser comprado [0 para voltar]:\n => ");
+        scanf("%d", &codigoProduto);
+        if (codigoProduto == 0) {  break;  }
 
-        hasProduct = 1;
-      } 
+        //  ~ Verifica se o produto existe e tem estoque
+        for (int i = 0; i < contadorProdutos; i++) {
+            if ((*listaProdutos)[i].codigo == codigoProduto) {
+                if ((*listaProdutos)[i].quant <= 0) {
+                    printf("\nProduto sem estoque! Escolha outro.\n");
+                    produtoValido = -1;
+                    break;
+                }
+
+                printf("Informe a quantidade desejada: \n => ");
+                scanf("%d", &quantidade);
+
+                if (quantidade <= 0) {
+                    printf("Quantidade inválida!\n");
+                    produtoValido = -1;
+                    break;
+                }
+
+                if (quantidade > (*listaProdutos)[i].quant) {
+                    //  ~ Um alert do estoque minimo
+                    printf("Atenção: estoque insuficiente! Estoque atual: %d\n", (*listaProdutos)[i].quant);
+                    printf("Deseja continuar com %d unidades? \n\t[1 = Sim]\n\t[0 = Não]: \n => ", (*listaProdutos)[i].quant);
+                    int continuar;
+                    scanf("%d", &continuar);
+                    if (continuar == 1) {
+                        quantidade = (*listaProdutos)[i].quant;
+                    } else {
+                        break;
+                    }
+                }
+
+                // Tudo certo! Adiciona ao carrinho
+                addCarrinho(carrinhoCompras, &(*listaProdutos)[i], quantidade);
+                produtoValido = 1;
+
+                printf("\n Produto adicionado ao carrinho com sucesso!\n");
+                break;
+            }
+        }
+
+        if (produtoValido == 0)
+            printf(" Código de produto inválido! Tente novamente.\n");
     }
-    if (  getProduct == 0  ) {
-      printf("\n\nVoltando ao Sub-Menu de Vendas...\n\n");
-      return;
-    }
-    // ~ O if aqui ele está servindo mais para printar na tela caso, mesmo após o for,
-    // ~ ainda não encontre um item com o codigo digitado
-    else if (  hasProduct == 0  ) {
-      printf("\n\nNão há produto com esse codigo cadastrado no sistema!!!\nDigite outro valor!\n\n => ");
-      scanf("%d", &getProduct);
-    }
-  } while (  hasProduct == 0  );
+
+    printf("\n Retornando ao menu de vendas...\n");
 }
 
 

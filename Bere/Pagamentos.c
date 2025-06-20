@@ -87,16 +87,8 @@ struct Pagamentos* novoPagamento (  struct Pagamentos* listaPagamentos, struct C
 void addCarrinho (  struct Carrinho* carrinhoCompras, struct Product* produtoEscolhido, int qnt  ) {
 
 
-  // ~ Essa verificação serve só pra ver se o carrinho foi alocado a memoria corretamente e talz além de, dps, zerar os itens da struct para evitar problemas de alocação
-  if (carrinhoCompras == NULL) {
-    carrinhoCompras = malloc(sizeof(struct Carrinho));
-    carrinhoCompras->itensCarrinho = NULL;
-    carrinhoCompras->totalItems = 0;
-    carrinhoCompras->valorAlimentos = 0;
-    carrinhoCompras->valorMateriais = 0;
-    carrinhoCompras->valorPadaria = 0;
-    carrinhoCompras->valorTotal = 0;
-}
+  // ~ Essa verificação serve só pra ver se o carrinho foi alocado a memoria corretamente e talz
+  if (carrinhoCompras == NULL) {  return;  }
 
 
 
@@ -106,73 +98,39 @@ void addCarrinho (  struct Carrinho* carrinhoCompras, struct Product* produtoEsc
   int copyQuanty = qnt;
 
 
-  while (  produtoEscolhido->quant < copyQuanty  ) {
 
-  };
-
-
-  // ~ Realocação da memoria do item itensCarrinho (que também é uma struct) da struct carrinhoCompras
-  // ~ É o local onde guardamos uma copia do produtoEscolhido pelo usuario no menu de Compras.
-  (*carrinhoCompras).itensCarrinho = realloc(
-        carrinhoCompras->itensCarrinho,
-        // ~ Ao inves de utilizar um contador para aumentar o tamanho desse array dinamico do carrinho,
-        // ~ tá sendo pego a propiedade de dentro da struct totalItems 
-        sizeof(struct itemCarrinho) * (carrinhoCompras->totalItems + 1)  
-  );
-
-
-
-  if (  (*carrinhoCompras).itensCarrinho == NULL  ) {
-    printf("Uhhh, deu algum erro na realocação de memoria dos itensCarrinho :/ \n\n");
-    exit(1);
+  //  ~ Reorganização de memória
+  carrinhoCompras->itensCarrinho = realloc(carrinhoCompras->itensCarrinho, sizeof(struct itemCarrinho) * (carrinhoCompras->totalItems + 1));
+  if (carrinhoCompras->itensCarrinho == NULL) {
+      printf("Erro ao alocar memória para o carrinho!\n");
+      exit(1);
   }
 
+    // ~ Copia do produto do carrinho
+    carrinhoCompras->itensCarrinho[carrinhoCompras->totalItems].produtoEscolhido = *produtoEscolhido;
+    carrinhoCompras->itensCarrinho[carrinhoCompras->totalItems].quant = copyQuanty;
+    carrinhoCompras->totalItems++;
 
-  
-   /* 
-    *  Passando valores para as variaveis carrinhoCompras 
-    * 
-    *  essas  [chaves] tão sendo usadas para definir o item [x] da propiedade itensCarrinho (tipo quando)
-    *  a gente chama variavel[i] em um for
-    *
-    */
-  carrinhoCompras->itensCarrinho[carrinhoCompras->totalItems].produtoEscolhido = *produtoEscolhido;
-  carrinhoCompras->itensCarrinho[carrinhoCompras->totalItems].quant = copyQuanty;
-  carrinhoCompras->totalItems++;  
+    float subtotal = produtoEscolhido->precoVenda * copyQuanty;
 
+    if (strcmp(produtoEscolhido->category, "Alimentos") == 0) carrinhoCompras->valorAlimentos += subtotal;
+    else if (strcmp(produtoEscolhido->category, "Materiais") == 0) carrinhoCompras->valorMateriais += subtotal;
+    else if (strcmp(produtoEscolhido->category, "Padaria") == 0) carrinhoCompras->valorPadaria += subtotal;
 
+    carrinhoCompras->valorTotal += subtotal;
 
-   /*
-    *  Mais um blocão de comentario aq 
-    *
-    *  Uhh, aq em baixo, o programa ele faz a multiplicação entre o valor de venda do produto e a quantidade,
-    *  e dps verifica qual é a categoria do produto (usandoi o strcmp (msm coisa que string = "valor a verificar"))
-    *  somando dai no valor da categoria o valor total da compra do produto escolhido.
-    *
-    *  e no finalzinho ali ele incrementa/soma/sla na variavel valorTotal o valor da compra.
-    */
-  float subtotal = produtoEscolhido->precoVenda * copyQuanty;
+    //  ~ Reduz o estoque
+    produtoEscolhido->quant -= copyQuanty;
 
-  if (strcmp(produtoEscolhido->category, "Alimentos") == 0) {
-      carrinhoCompras->valorAlimentos += subtotal;
-  } else if (strcmp(produtoEscolhido->category, "Materiais") == 0) {
-      carrinhoCompras->valorMateriais += subtotal;
-  } else if (strcmp(produtoEscolhido->category, "Padaria") == 0) {
-      carrinhoCompras->valorPadaria += subtotal;
-  }
+    //  ~ Alertas de estoque mínimo e essas paradas :)
+    if (produtoEscolhido->quant <= produtoEscolhido->quantMin && produtoEscolhido->quant > 0) {
+        printf("\n ~ ALERTA ~ \nEstoque mínimo atingido para o produto [%s] (Min: %d | Atual: %d)\n",
+               produtoEscolhido->nome, produtoEscolhido->quantMin, produtoEscolhido->quant);
+    }
 
-  carrinhoCompras->valorTotal += subtotal;
-
-
-
-  // ~ Aqui tá aquele thrownback de erro q ele pede caso o estoque minimo seja atingido e a retirada da quanti do produto escolhido e talz 
-  produtoEscolhido->quant -= copyQuanty;
-
-  if (  produtoEscolhido->quant <= produtoEscolhido->quantMin  ) {
-    printf("\n\n!!!ALERTA!!!\n\nA quantidade minima de: %s foi atingida! ( que era de: %d )\n quantidade atual agora: %d", 
-      produtoEscolhido->nome, produtoEscolhido->quantMin, produtoEscolhido->quant
-    );
-  }
+    if (produtoEscolhido->quant == 0) {
+        printf("\n ~ ALERTA ~ \nEstoque zerado após essa venda para o produto [%s].\n", produtoEscolhido->nome);
+    }
 }
 
 

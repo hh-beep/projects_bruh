@@ -1,14 +1,191 @@
-// --------- Início de Cadastro.c ---------
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "Cadastro.h"
+#include <locale.h>
 
 
 
 
+
+
+
+// === Declarações de Structs e Funções ===
+// Menus.h
+// ~ Importação das declarações de outros arquivos
+void menuPrincipal(  int* opcaoSubMenu  );
+
+
+void menuCadastrosOpts(  int* opcaoSubMenu  );
+void menuCadastros(  int* opcaoSubMenu, struct User** listaUsuarios, int* contadorUsuarios, struct Product** listaProdutos, int* contadorProdutos  );
+
+
+void menuVendasOpts(  int* opcaoSubMenu  );
+void menuVendasCompra(  struct Carrinho* carrinhoCompras, struct Product** listaProdutos, int contadorProdutos  );
+void menuVendas(  
+    struct Pagamentos** listaPagamentos, struct Carrinho* carrinhoCompras, struct Product** listaProdutos, 
+    int* opcaoSubMenu, int* contadorPagamentos, int contadorProdutos, float *valorCaixa 
+);
+void verificarPagamentosAbertos(struct Pagamentos** listaPagamentos, int contadorPagamentos, struct Carrinho* carrinhoCompras);
+
+
+void menuAbertCaixaOpts(  int* opcaoSubMenu  );
+void menuAbertCaixa(  int* opcaoSubMenu, float* valorCaixa, char* isOpenCaixa  );
+
+
+void menuFechaCaixa(  struct Pagamentos* listaPagamentos, int contadorPagamentos, float valorCaixa  );
+
+
+void menuRelatorios(  struct Pagamentos* listaPagamentos, int contadorPagamentos  );
+
+
+// Pagamentos.h
+// ~ Importando as structs e partes de codigo que estão declarados no Cadastro.h
+// ~ Essa struct será responsavel por guardar os valores de todos os pagamentos do dia.
+struct Pagamentos {
+  int codigo;
+  float valor;
+  char tipo[50];       // ~ Tipos: Dinheiro, Cartão e Dinheiro e Cartão
+
+  struct itemCarrinho* itensComprados; 
+
+  float valorMateriais;
+  float valorAlimentos;
+  float valorPadaria;
   
+  float valorTotal;
+
+  int totalItems;
+
+  int totalPagamentos;
+  char emAberto[1]; 
+};
+
+/*
+ *
+ *  As variaveis abaixo servem para armazenar em um carrinho de compras temporário os 
+ *  itens escolhidos para comprar pelo usuario na parte das vendas.
+ *  
+ *  A struct itemCarrinho armazenará o produto que o usuario escolheu, além da 
+ *  quantidade.
+ *
+ *  Já a struct Carrinho em sí guardará tipo um Array de struct em que vai conter a 
+ *  lista de todos os produtos escolhidos pelo usuario em uma compra, além do valor
+ *  do total de itens, os valores de cada categoria + o valor total das compras.
+ *
+*/
+struct itemCarrinho {
+  // ~ A struct chamada aqui não é um ponteiro pois só vamos precisar dos valores
+  // ~ do item que o usuario escolheu, não precisando mudar o item escolhido em sí.
+  struct Product produtoEscolhido;
+  int quant;
+};
+
+struct Carrinho {
+  // ~ Como explicado outras vezes, essa struct 
+  // ~ ponteiro abaixo funciona como um array dinâmico, 
+  // ~ ( um "vetor que cresce conforme você adiciona produtos" ).
+  struct itemCarrinho* itensCarrinho;
+  
+  int totalItems;
+ 
+  float valorMateriais;
+  float valorAlimentos;
+  float valorPadaria;
+  
+  float valorTotal;
+};
+
+
+
+
+
+struct Pagamentos* novoPagamento(   struct Pagamentos* listaPagamentos, struct Carrinho carrinhoCompras, int* contadorPagamentos, int tipoPagamento  );
+
+
+
+
+/*
+void starCarrinho(  struct Carrinho* carrinhoCompras  );
+*/
+void addCarrinho(  struct Carrinho* carrinhoCompras, struct Product* produtoEscolhido, int qnt  );
+
+void startCarrinho(  struct Carrinho** carrinhoCompras);
+
+void resetCarrinho(  struct Carrinho* carrinhoCompras  );
+
+
+
+
+
+void abrirCaixa(  float* valorCaixa, char* isOpenCaixa  );
+
+
+void retiradaCaixa(  float* valorCaixa  );
+
+
+// Cadastro.h
+/*
+ *  Declarações de Criação de Usuarios
+ *
+ *
+ *  Aqui neste arquivo conterá toda as informações/declarações de funções criadas no 
+ *  arquivo Cadastro.c, além de ter a declaração da struct User e struct Product, usada para criar 
+ *  usuarios e produtos no sistema.
+ *
+ *
+ */
+struct User {
+  int id;
+  int codigo;
+  char nome[100];
+  char social[100];
+  long long cpf;
+  int cep;
+  long long telefone;
+};
+
+
+
+struct User* novoUsuario(  struct User** listaUsuarios, int* contadorUsuarios );
+
+void mostrarTodosUsuarios(  struct User* listaUsuarios, int contadorUsuarios  );
+
+void exportUsuarios(  struct User* listaUsuarios, int contadorUsuarios, FILE* userData  );
+
+
+
+
+
+//  Declarações de funções de Criação de Produto
+
+
+
+struct Product {
+  int id;
+  int codigo;
+  char nome[100];
+  char category[100];
+  float precoCompra;
+  float precoVenda;
+  float lucro;
+  int quant;
+  int quantMin;
+};
+
+
+
+struct Product* novoProduto (  struct Product** listaProdutos, int* contadorProdutos  );
+
+void mostrarTodosProdutos(  struct Product* listaUsuarios, int contadorProdutos  );
+
+void exportProdutos(  struct Product* listaProdutos, int contadorProdutos, FILE* productData  );
+
+// === Funções de Cadastro ===
+// Cadastro.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 // ~ Cadastro de Clientes
  
 
@@ -73,36 +250,34 @@ struct User* novoUsuario(  struct User** listaUsuarios, int* contadorUsuarios  )
   printf("\n\n");
 
 
-
-  printf("Digite o codigo do usuario [val. min: 1000 / val max: 9999]: \n => ");
-  scanf("%d", &((*listaUsuarios[*contadorUsuarios]).codigo));
-  printf("\n\n");
-
   // ~ Verificação se o codigo do usuario é valido (ou seja, se é entre 1000 e 9999 ou se não é repetido)
   while (!codigoValido) {
+    printf("Digite o codigo do usuario [1000 a 9999]:\n => ");
     scanf("%d", &((*listaUsuarios)[*contadorUsuarios].codigo));
 
-    if ((  (*listaUsuarios)[*contadorUsuarios].codigo < 1000  ) || (  (*listaUsuarios)[*contadorUsuarios].codigo > 9999  )) {
-      printf("\nCódigo inválido!\nDigite um valor entre [1000] e [9999]:\n => ");
+    if ((*listaUsuarios)[*contadorUsuarios].codigo < 1000 || 
+        (*listaUsuarios)[*contadorUsuarios].codigo > 9999) {
+        printf("\nCódigo inválido! Digite um valor entre [1000] e [9999]\n");
+        continue;
     }
 
+    codigoRepetido = 0;
     for (int i = 0; i < *contadorUsuarios; i++) {
-      if (  (*listaUsuarios)[i].codigo == (*listaUsuarios)[*contadorUsuarios].codigo  ) {
-        codigoRepetido = 1;
-        break;
-      }
+        if ((*listaUsuarios)[i].codigo == (*listaUsuarios)[*contadorUsuarios].codigo) {
+            codigoRepetido = 1;
+            break;
+        }
     }
 
     if (codigoRepetido) {
-      printf("\nJá existe um usuario com esse código!\n Digite outro:\n => ");
+        printf("\nJá existe um usuário com esse código! Digite outro:\n");
     } else {
-      codigoValido = 1;
+        codigoValido = 1;
     }
-  }
+  } 
 
-
-  printf("Digite o nome social: \n => ");
   getchar();
+  printf("Digite o nome social: \n => ");
   scanf("%[^\n]", &(*listaUsuarios)[*contadorUsuarios].social);
   printf("\n\n");
 
@@ -442,27 +617,27 @@ void exportProdutos(  struct Product* listaProdutos, int contadorProdutos, FILE*
 }
 
 
-// --------- Início de Pagamentos.c ---------
-
+// === Funções de Pagamento ===
+// Pagamentos.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 // ~ Importz
-#include "Cadastro.h"
-#include "Pagamentos.h"
-
-
-
-
 // ~ Nessa função da struct Pagamentos* importamos o carrinho de Compras para que 
 // ~ fique mais facil na parte de atribuir um novo pagamento, ao inves de passar 
 // ~ como parametro 3 propiedades.
 struct Pagamentos* novoPagamento (  struct Pagamentos* listaPagamentos, struct Carrinho carrinhoCompras, int* contadorPagamentos, int tipoPagamento  ) {
 
+
+
   // ~ Realocação da memoria da variavel listaPagamentos para adicionar novos itens
   // ~ dinamicamente à variavel listaPagamentos.
   listaPagamentos = realloc(  listaPagamentos, sizeof(  struct Pagamentos  ) * (*contadorPagamentos + 1)  );
+
+
+  int total = carrinhoCompras.totalItems;
+
 
 
   // ~ Só uma verificação (se a variavel dps de realocar é diferente de null) 
@@ -500,7 +675,17 @@ struct Pagamentos* novoPagamento (  struct Pagamentos* listaPagamentos, struct C
   listaPagamentos[*contadorPagamentos].valorPadaria = carrinhoCompras.valorPadaria;
   listaPagamentos[*contadorPagamentos].valorTotal = carrinhoCompras.valorTotal;
 
-  listaPagamentos[*contadorPagamentos].itensComprados = carrinhoCompras.itensCarrinho; 
+
+
+  listaPagamentos[*contadorPagamentos].itensComprados = malloc(sizeof(struct itemCarrinho) * total);
+
+  // Copiar os itens manualmente
+  for (int i = 0; i < total; i++) {
+      listaPagamentos[*contadorPagamentos].itensComprados[i] = carrinhoCompras.itensCarrinho[i];
+  }
+
+  // BONUS: salvar o total de itens também
+  listaPagamentos[*contadorPagamentos].totalItems = total;
 
 
   (*contadorPagamentos)++;
@@ -517,16 +702,8 @@ struct Pagamentos* novoPagamento (  struct Pagamentos* listaPagamentos, struct C
 void addCarrinho (  struct Carrinho* carrinhoCompras, struct Product* produtoEscolhido, int qnt  ) {
 
 
-  // ~ Essa verificação serve só pra ver se o carrinho foi alocado a memoria corretamente e talz além de, dps, zerar os itens da struct para evitar problemas de alocação
-  if (carrinhoCompras == NULL) {
-    carrinhoCompras = malloc(sizeof(struct Carrinho));
-    carrinhoCompras->itensCarrinho = NULL;
-    carrinhoCompras->totalItems = 0;
-    carrinhoCompras->valorAlimentos = 0;
-    carrinhoCompras->valorMateriais = 0;
-    carrinhoCompras->valorPadaria = 0;
-    carrinhoCompras->valorTotal = 0;
-}
+  // ~ Essa verificação serve só pra ver se o carrinho foi alocado a memoria corretamente e talz
+  if (carrinhoCompras == NULL) {  return;  }
 
 
 
@@ -536,73 +713,54 @@ void addCarrinho (  struct Carrinho* carrinhoCompras, struct Product* produtoEsc
   int copyQuanty = qnt;
 
 
-  while (  produtoEscolhido->quant < copyQuanty  ) {
 
-  };
-
-
-  // ~ Realocação da memoria do item itensCarrinho (que também é uma struct) da struct carrinhoCompras
-  // ~ É o local onde guardamos uma copia do produtoEscolhido pelo usuario no menu de Compras.
-  (*carrinhoCompras).itensCarrinho = realloc(
-        carrinhoCompras->itensCarrinho,
-        // ~ Ao inves de utilizar um contador para aumentar o tamanho desse array dinamico do carrinho,
-        // ~ tá sendo pego a propiedade de dentro da struct totalItems 
-        sizeof(struct itemCarrinho) * (carrinhoCompras->totalItems + 1)  
-  );
-
-
-
-  if (  (*carrinhoCompras).itensCarrinho == NULL  ) {
-    printf("Uhhh, deu algum erro na realocação de memoria dos itensCarrinho :/ \n\n");
-    exit(1);
+  //  ~ Reorganização de memória
+  carrinhoCompras->itensCarrinho = realloc(carrinhoCompras->itensCarrinho, sizeof(struct itemCarrinho) * (carrinhoCompras->totalItems + 1));
+  if (carrinhoCompras->itensCarrinho == NULL) {
+      printf("Erro ao alocar memória para o carrinho!\n");
+      exit(1);
   }
 
+    // ~ Copia do produto do carrinho
+    carrinhoCompras->itensCarrinho[carrinhoCompras->totalItems].produtoEscolhido = *produtoEscolhido;
+    carrinhoCompras->itensCarrinho[carrinhoCompras->totalItems].quant = copyQuanty;
+    carrinhoCompras->totalItems++;
 
-  
-   /* 
-    *  Passando valores para as variaveis carrinhoCompras 
-    * 
-    *  essas  [chaves] tão sendo usadas para definir o item [x] da propiedade itensCarrinho (tipo quando)
-    *  a gente chama variavel[i] em um for
-    *
-    */
-  carrinhoCompras->itensCarrinho[carrinhoCompras->totalItems].produtoEscolhido = *produtoEscolhido;
-  carrinhoCompras->itensCarrinho[carrinhoCompras->totalItems].quant = copyQuanty;
-  carrinhoCompras->totalItems++;  
+    float subtotal = produtoEscolhido->precoVenda * copyQuanty;
+
+    if (strcmp(produtoEscolhido->category, "Alimentos") == 0) carrinhoCompras->valorAlimentos += subtotal;
+    else if (strcmp(produtoEscolhido->category, "Materiais") == 0) carrinhoCompras->valorMateriais += subtotal;
+    else if (strcmp(produtoEscolhido->category, "Padaria") == 0) carrinhoCompras->valorPadaria += subtotal;
+
+    carrinhoCompras->valorTotal += subtotal;
+
+    //  ~ Reduz o estoque
+    produtoEscolhido->quant -= copyQuanty;
+
+    //  ~ Alertas de estoque mínimo e essas paradas :)
+    if (produtoEscolhido->quant <= produtoEscolhido->quantMin && produtoEscolhido->quant > 0) {
+        printf("\n ~ ALERTA ~ \nEstoque mínimo atingido para o produto [%s] (Min: %d | Atual: %d)\n",
+               produtoEscolhido->nome, produtoEscolhido->quantMin, produtoEscolhido->quant);
+    }
+
+    if (produtoEscolhido->quant == 0) {
+        printf("\n ~ ALERTA ~ \nEstoque zerado após essa venda para o produto [%s].\n", produtoEscolhido->nome);
+    }
+}
 
 
-
-   /*
-    *  Mais um blocão de comentario aq 
-    *
-    *  Uhh, aq em baixo, o programa ele faz a multiplicação entre o valor de venda do produto e a quantidade,
-    *  e dps verifica qual é a categoria do produto (usandoi o strcmp (msm coisa que string = "valor a verificar"))
-    *  somando dai no valor da categoria o valor total da compra do produto escolhido.
-    *
-    *  e no finalzinho ali ele incrementa/soma/sla na variavel valorTotal o valor da compra.
-    */
-  float subtotal = produtoEscolhido->precoVenda * copyQuanty;
-
-  if (strcmp(produtoEscolhido->category, "Alimentos") == 0) {
-      carrinhoCompras->valorAlimentos += subtotal;
-  } else if (strcmp(produtoEscolhido->category, "Materiais") == 0) {
-      carrinhoCompras->valorMateriais += subtotal;
-  } else if (strcmp(produtoEscolhido->category, "Padaria") == 0) {
-      carrinhoCompras->valorPadaria += subtotal;
+void startCarrinho(  struct Carrinho** carrinhoCompras  ) {
+  *carrinhoCompras = malloc(sizeof(struct Carrinho));
+  if (*carrinhoCompras == NULL) {
+      printf("Erro ao alocar memória para o carrinho!\n");
+      exit(1);
   }
-
-  carrinhoCompras->valorTotal += subtotal;
-
-
-
-  // ~ Aqui tá aquele thrownback de erro q ele pede caso o estoque minimo seja atingido e a retirada da quanti do produto escolhido e talz 
-  produtoEscolhido->quant -= copyQuanty;
-
-  if (  produtoEscolhido->quant <= produtoEscolhido->quantMin  ) {
-    printf("\n\n!!!ALERTA!!!\n\nA quantidade minima de: %s foi atingida! ( que era de: %d )\n quantidade atual agora: %d", 
-      produtoEscolhido->nome, produtoEscolhido->quantMin, produtoEscolhido->quant
-    );
-  }
+  (*carrinhoCompras)->itensCarrinho = NULL;
+  (*carrinhoCompras)->totalItems = 0;
+  (*carrinhoCompras)->valorAlimentos = 0;
+  (*carrinhoCompras)->valorMateriais = 0;
+  (*carrinhoCompras)->valorPadaria = 0;
+  (*carrinhoCompras)->valorTotal = 0;
 }
 
 
@@ -682,22 +840,15 @@ void retiradaCaixa(  float* valorCaixa  ) {
   }
 }
 
-// --------- Início de Menus.c ---------
-
+// === Funções de Menu ===
+// Menus.c
 #include <stdio.h>
+#include <string.h>
 
 // ~ Os arquivos foram importados aqui para que nos dê a possibilidade de separar
 // ~ as funções de sistemas das funções de menus/submenus, ou seja, em Cadastro.c
 // ~ estará declarado as funções relacionadas à criação e mostrar os cadastros, 
 // ~ o que é chamado aqui no codigo dos sub-menus.
-#include "Menus.h"
-#include "Cadastro.h"
-#include "Pagamentos.h"
-
-
-
-
-
 //                    ~ Menu Principal ~
 
 void menuPrincipal(  int* opcaoMenu  ) {
@@ -837,79 +988,72 @@ void menuVendasOpts(  int* opcaoSubMenu  ) {
 
 
 
-void menuVendasCompra(  struct Carrinho* carrinhoCompras, struct Product** listaProdutos, int contadorProdutos  ) {
-  
-  int getProduct;
-  int productId;
-  int hasProduct = 0;     // essa variavel serve para ajudar na verificação de se o usuario de fato escolheu algum produto.
+void menuVendasCompra(struct Carrinho* carrinhoCompras, struct Product** listaProdutos, int contadorProdutos) {
+    int codigoProduto, quantidade;
+    int produtoValido = 0;
 
-  
-  printf("\n\n\n");
-  printf("--- Comprar um novo Produto ---\n");
-  printf("  ~  \n\n\n");
-  printf("Cod.\t Nome\t Categoria\t Valor\t Quantidade\n\n");
-  for (  int i = 0; i < contadorProdutos; i++  ) {
-    printf("[%d]\t ", (*listaProdutos)[i].codigo);
-    printf("%s\t ", (*listaProdutos)[i].nome);
-    printf("%s\t ", (*listaProdutos)[i].category);
-    printf("%.2f\t ", (*listaProdutos)[i].precoVenda);
-    printf("%d\t\n ", (*listaProdutos)[i].quant);
-  }
-  printf("\n\n\n");
-  
-
-  printf("Qual item deseja ser comprado? [0: sair do menu]\n => ");
-  scanf("%d", &getProduct);
-  printf("\n\n");
-  
-
-  do {
-    for (  int i = 0; i < contadorProdutos; i++  ) {
-      // ~ aq só tá verificando se o produto escolhido ainda tem estoque (se o estoque for maior q zero ), entrando dnv o loop até sair 
-      if (  (*listaProdutos)[i].quant <= 0  ) {
-        // ~ uhhh, aqui não precisaria desse if e um while, poderia só ter o while em si, mas como lá em baixo já tá sendo usado um else if 
-        while (  (*listaProdutos)[i].quant <= 0 && (*listaProdutos)[i].codigo == getProduct  ) {
-          printf("\nO item escolhido não tem estoque!!!\n");
-          printf("Qual outro item vc deseja ser comprado? [0: sair do menu]\n => ");
-          scanf("%d", &getProduct);
-          printf("\n\n");
-        }
-      }  
-
-
-      // ~ Ele entrará nesta verificação se o houver algum produto com codigo digitado pelo usuario 
-      // ~ executando a função da compra já aqui dentro dessa verificação.
-      else if (  (*listaProdutos)[i].codigo == getProduct  && (*listaProdutos)[i].quant > 0  ) {
-      
-        int getQuant;
-        
-        printf("Qual será a quantidade de itens a serem compradas?\n => ");
-        scanf("%d", &getQuant);
-        printf("\n\n");
-
-
-        // ~ Loop de evitar quant invalida
-        while ((  getQuant > (*listaProdutos)[i].quant  ) || (  getQuant <= 0  )) {
-          printf("\n\nQuantidade Invalida!\nDigite a quantidade novamente (quant. disponivel: %d)\n => ", (*listaProdutos)[i].quant);
-          scanf("%d", &getQuant);
+    while (1) {
+        printf("\n--- Lista de Produtos Disponíveis ---\n");
+        printf("Código | Nome            | Categoria        | Preço R$ | Estoque\n");
+        printf("---------------------------------------------------------------\n");
+        for (int i = 0; i < contadorProdutos; i++) {
+            printf("%5d | %-15s | %-15s | %7.2f | %d\n",
+                (*listaProdutos)[i].codigo,
+                (*listaProdutos)[i].nome,
+                (*listaProdutos)[i].category,
+                (*listaProdutos)[i].precoVenda,
+                (*listaProdutos)[i].quant);
         }
 
-        addCarrinho(carrinhoCompras, &(*listaProdutos)[i], getQuant);
+        printf("\nInforme o código do produto a ser comprado [0 para voltar]:\n => ");
+        scanf("%d", &codigoProduto);
+        if (codigoProduto == 0) {  break;  }
 
-        hasProduct = 1;
-      } 
+        //  ~ Verifica se o produto existe e tem estoque
+        for (int i = 0; i < contadorProdutos; i++) {
+            if ((*listaProdutos)[i].codigo == codigoProduto) {
+                if ((*listaProdutos)[i].quant <= 0) {
+                    printf("\nProduto sem estoque! Escolha outro.\n");
+                    produtoValido = -1;
+                    break;
+                }
+
+                printf("Informe a quantidade desejada: \n => ");
+                scanf("%d", &quantidade);
+
+                if (quantidade <= 0) {
+                    printf("Quantidade inválida!\n");
+                    produtoValido = -1;
+                    break;
+                }
+
+                if (quantidade > (*listaProdutos)[i].quant) {
+                    //  ~ Um alert do estoque minimo
+                    printf("Atenção: estoque insuficiente! Estoque atual: %d\n", (*listaProdutos)[i].quant);
+                    printf("Deseja continuar com %d unidades? \n\t[1 = Sim]\n\t[0 = Não]: \n => ", (*listaProdutos)[i].quant);
+                    int continuar;
+                    scanf("%d", &continuar);
+                    if (continuar == 1) {
+                        quantidade = (*listaProdutos)[i].quant;
+                    } else {
+                        break;
+                    }
+                }
+
+                // Tudo certo! Adiciona ao carrinho
+                addCarrinho(carrinhoCompras, &(*listaProdutos)[i], quantidade);
+                produtoValido = 1;
+
+                printf("\n Produto adicionado ao carrinho com sucesso!\n");
+                break;
+            }
+        }
+
+        if (produtoValido == 0)
+            printf(" Código de produto inválido! Tente novamente.\n");
     }
-    if (  getProduct == 0  ) {
-      printf("\n\nVoltando ao Sub-Menu de Vendas...\n\n");
-      return;
-    }
-    // ~ O if aqui ele está servindo mais para printar na tela caso, mesmo após o for,
-    // ~ ainda não encontre um item com o codigo digitado
-    else if (  hasProduct == 0  ) {
-      printf("\n\nNão há produto com esse codigo cadastrado no sistema!!!\nDigite outro valor!\n\n => ");
-      scanf("%d", &getProduct);
-    }
-  } while (  hasProduct == 0  );
+
+    printf("\n Retornando ao menu de vendas...\n");
 }
 
 
@@ -1208,21 +1352,13 @@ void menuRelatorios(  struct Pagamentos* listaPagamentos, int contadorPagamentos
     printf("\n----------------------------\n");
 }
 
-// --------- Início de main.c ---------
-
+// === Função Principal ===
+// main.c
 #include <stdio.h>
 #include <stdlib.h>
 #include <locale.h>
 
 // ~ Arquivos importados
-#include "Pagamentos.h"
-#include "Cadastro.h"
-#include "Menus.h"
-
-
-
-
-
 int main() {
   // ~ Permitindo o uso de caracteres com acento e ç no proggerma.
   // ~ Obs: por algum motivo n tá funcionando, n sei se é a fonte, pwershell, sla...
@@ -1258,6 +1394,8 @@ int main() {
   int opcaoMenu, opcaoSubMenu = 0;
 
 
+  // ~ Um start no carrinho (pra evitar erros e o sistema crashar)
+  startCarrinho(  &carrinhoCompras  );
 
 
 
@@ -1337,5 +1475,3 @@ int main() {
   free(carrinhoCompras);
   return 0;
 }
-
-

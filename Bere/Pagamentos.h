@@ -1,93 +1,98 @@
 #ifndef PAGAMENTOS_H
 #define PAGAMENTOS_H
 
-// ~ Importando as structs e partes de codigo que estão declarados no Cadastro.h
-#include "Cadastro.h"
+// Declaração antecipada para evitar erro de tipo incompleto
+struct Produto;
+struct Cliente;
+struct Usuario;
 
-
-
-
-// ~ Essa struct será responsavel por guardar os valores de todos os pagamentos do dia.
-struct Pagamentos {
-  int codigo;
-  float valor;
-  char tipo[50];       // ~ Tipos: Dinheiro, Cartão e Dinheiro e Cartão
-
-  struct itemCarrinho* itensComprados; 
-
-  float valorMateriais;
-  float valorAlimentos;
-  float valorPadaria;
-  
-  float valorTotal;
-
-  int totalItems;
-
-  int totalPagamentos;
-  char emAberto[1]; 
-};
-
+#include "Produtos.h"
+#include "Clientes.h"
+#include "Usuario.h"
 /*
- *
- *  As variaveis abaixo servem para armazenar em um carrinho de compras temporário os 
- *  itens escolhidos para comprar pelo usuario na parte das vendas.
- *  
- *  A struct itemCarrinho armazenará o produto que o usuario escolheu, além da 
- *  quantidade.
- *
- *  Já a struct Carrinho em sí guardará tipo um Array de struct em que vai conter a 
- *  lista de todos os produtos escolhidos pelo usuario em uma compra, além do valor
- *  do total de itens, os valores de cada categoria + o valor total das compras.
- *
-*/
-struct itemCarrinho {
-  // ~ A struct chamada aqui não é um ponteiro pois só vamos precisar dos valores
-  // ~ do item que o usuario escolheu, não precisando mudar o item escolhido em sí.
-  struct Product produtoEscolhido;
-  int quant;
+ * Arquivo responsável pela declaração das Structs e funções relacionadas a:
+ * -> Vendas
+ * -> Carrinho de Compras
+ * -> Caixa (Abertura, Fechamento, Sangria)
+ * -> Pagamentos
+ */
+
+
+// ~ Struct dos itens no carrinho
+struct ItemCarrinho {
+    struct Produto* produto;
+    int quantidade;
+    float precoUnitario;
+    float subtotal;
 };
 
+
+// ~ Struct do carrinho completo
 struct Carrinho {
-  // ~ Como explicado outras vezes, essa struct 
-  // ~ ponteiro abaixo funciona como um array dinâmico, 
-  // ~ ( um "vetor que cresce conforme você adiciona produtos" ).
-  struct itemCarrinho* itensCarrinho;
-  
-  int totalItems;
- 
-  float valorMateriais;
-  float valorAlimentos;
-  float valorPadaria;
-  
-  float valorTotal;
+    struct ItemCarrinho* itens;
+    int totalItens;
+
+    float totalAlimentos;
+    float totalMateriais;
+    float totalPadaria;
+    float totalGeral;
+
+    struct Cliente cliente; // Cliente vinculado na venda
+    int dia, mes, ano;
 };
 
 
+// ~ Struct dos pagamentos
+struct Pagamento {
+    int id;
+    float valor;
+    char tipo[30]; // Dinheiro, Cartao, Misto Dinheiro, Misto Cartao
+    struct Carrinho carrinho;
+
+    char status[10]; // Aberto ou Pago
+};
+
+
+// ~ Funções do Carrinho
+void iniciarCarrinho(struct Carrinho** carrinho);
+void adicionarItemNoCarrinho(struct Carrinho* carrinho, struct Produto* produto, int quantidade);
+void limparCarrinho(struct Carrinho* carrinho);
+
+
+// ~ Funções de Pagamento
+struct Pagamento* novoPagamento(struct Pagamento* listaPagamentos, struct Carrinho carrinho, int* contadorPagamentos, int tipoPagamento, float valorRecebido);
+void listarPagamentosAbertos(struct Pagamento* listaPagamentos, int contadorPagamentos);
+
+
+// ~ Operações de Caixa
+void abrirCaixa(float* valorCaixa, char* statusCaixa, struct Usuario* usuarioLogado, struct Usuario* listaUsuarios, int totalUsuarios);
+void sangriaCaixa(float* valorCaixa, struct Usuario* usuarioLogado, struct Usuario* listaUsuarios, int totalUsuarios, struct Pagamento* listaPagamentos, int contadorPagamentos);
+void fecharCaixa(float valorCaixa, struct Pagamento* listaPagamentos, int contadorPagamentos, struct Usuario* usuarioLogado, struct Usuario* listaUsuarios, int totalUsuarios);
+
+
+// ~ Exportação
+void exportarPagamentos(struct Pagamento* listaPagamentos, int contadorPagamentos);
+
+
+struct Pagamento* realizarVenda(struct Produto* listaProdutos, int* totalProdutos,
+    struct Cliente* listaClientes, int totalClientes, struct Usuario* usuarioAtual,
+    struct Pagamento* listaPagamentos, int* totalPagamentos, struct Carrinho* carrinho);
+
+
+void pagarVendaAberta(struct Pagamento* listaPagamentos, int contadorPagamentos);
 
 
 
-struct Pagamentos* novoPagamento(   struct Pagamentos* listaPagamentos, struct Carrinho carrinhoCompras, int* contadorPagamentos, int tipoPagamento  );
 
+// ~ Os coiso de relatorio aq
+void listarClientesOrdemAlfabetica(struct Cliente* listaClientes, int totalClientes);
+void listarClientesQueCompraram(struct Pagamento* listaPagamentos, int totalPagamentos);
+void listarProdutosOrdenados(struct Produto* listaProdutos, int totalProdutos);
+void produtosMaisVendidos(struct Pagamento* listaPagamentos, int totalPagamentos);
+void listarVendasPorPeriodo(struct Pagamento* listaPagamentos, int totalPagamentos);
+void faturamentoPorTipoPagamento(struct Pagamento* listaPagamentos, int totalPagamentos);
 
-
-
-/*
-void starCarrinho(  struct Carrinho* carrinhoCompras  );
-*/
-void addCarrinho(  struct Carrinho* carrinhoCompras, struct Product* produtoEscolhido, int qnt  );
-
-void startCarrinho(  struct Carrinho** carrinhoCompras);
-
-void resetCarrinho(  struct Carrinho* carrinhoCompras  );
-
-
-
-
-
-void abrirCaixa(  float* valorCaixa, char* isOpenCaixa  );
-
-
-void retiradaCaixa(  float* valorCaixa  );
+// ~ meuDeus. 
 
 
 #endif

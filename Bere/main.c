@@ -1,129 +1,181 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <locale.h>
+#include <string.h>
 
-// ~ Arquivos importados
+#include "Produtos.h"
+#include "Clientes.h"
+#include "Usuario.h"
 #include "Pagamentos.h"
-#include "Cadastro.h"
-#include "Menus.h"
-
-
-
 
 
 int main() {
-  // ~ Permitindo o uso de caracteres com acento e ç no proggerma.
-  // ~ Obs: por algum motivo n tá funcionando, n sei se é a fonte, pwershell, sla...
-  setlocale(LC_ALL, "Portuguese");
+    //setlocale(LC_ALL, "Portuguese");
 
-  
-  // ~ Sla, outras variaveis usadas no sistema ai :D
-  float valorCaixa = 0;
+    // ~ Variáveis de controle geral
+    float valorCaixa = 0;
+    char statusCaixa = 'N';
 
-  // ~ Por algum motivo, ao se comparar usando "" aspas dulas, ele compara como
-  // ~ se fosse uma string 🤯.
-  char isOpenCaixa = 'N';
+    int opcaoMenu, opcaoSubMenu = 0;
 
-
-  // ~ Aqui, são inicialicadas as variaveis relacionadas à criação/modificação de usuarios no sistema, além
-  // ~ de estar chamando o arquivo para guardar os dados de usuarios .
-  struct User* listaUsuarios = NULL;
-  int contadorUsuarios = 0;
-  FILE *userData;
+    // ~ Usuários do sistema
+    struct Usuario* listaUsuarios = NULL;
+    int totalUsuarios = 0;
+    struct Usuario* usuarioLogado = NULL;
 
 
-  // ~ As variaveis relacionadas aos produtos cadastrados e aos arquivos para exportação dos produtos criadoz.
-  struct Product* listaProdutos = NULL;
-  int contadorProdutos = 0;
-  FILE *productData;
+    // ~ Cria usuário admin padrão se nenhum estiver carregado
+    if (totalUsuarios == 0) {
+        listaUsuarios = malloc(sizeof(struct Usuario));
+        listaUsuarios[0].id = 0;
+        strcpy(listaUsuarios[0].login, "admin");
+        strcpy(listaUsuarios[0].senha, "admin123");
+        listaUsuarios[0].tipo = 1;
+        totalUsuarios = 1;
 
- 
-  // ~ As variaveis para controle de todos os pagamentos feitos no dia + carrinho de 
-  // ~ Compras (que é algo temporario para aquela compra) .
-  struct Pagamentos* listaPagamentos = NULL;
-  struct Carrinho* carrinhoCompras = NULL;
-  int contadorPagamentos = 0;
-  int opcaoMenu, opcaoSubMenu = 0;
-
-
-  // ~ Um start no carrinho (pra evitar erros e o sistema crashar)
-  startCarrinho(  &carrinhoCompras  );
+        printf("\n>>> Usuário admin criado automaticamente (login: admin | senha: admin123)\n");
+    }
 
 
+    // ~ Clientes
+    struct Cliente* listaClientes = NULL;
+    int totalClientes = 0;
+
+    // ~ Produtos
+    struct Produto* listaProdutos = NULL;
+    int totalProdutos = 0;
+
+    // ~ Pagamentos
+    struct Pagamento* listaPagamentos = NULL;
+    int totalPagamentos = 0;
+
+    // ~ Carrinho
+    struct Carrinho* carrinho = NULL;
+    iniciarCarrinho(&carrinho);
 
 
-
-  // ~ Le Programe  
-  menuPrincipal(  &opcaoMenu  );
-
-
-
-
-  // ~ Um Loop que executará enquanto a opção sair (6) não for escolhida;
-  do {
-    switch (  opcaoMenu  ) {
-      case 1:
-        menuCadastros(  &opcaoSubMenu, &listaUsuarios, &contadorUsuarios, &listaProdutos, &contadorProdutos  );  
-        menuPrincipal(  &opcaoMenu  );
-        break;
+    // ~ LOGIN INICIAL
+    do {
+        printf("\n==== LOGIN NO SISTEMA ====\n");
+        usuarioLogado = loginSistema(listaUsuarios, totalUsuarios);
+    } while (usuarioLogado == NULL);
 
 
 
-      case 2:
-        // ~ Aqui, a gente tá verificando se há algum produto cadastrado, depois se o 
-        // ~ já foi aberto, caso sim, dai a gente prossegue pras vendas :D
-        if ((  listaProdutos == NULL  ) && (  contadorProdutos == 0  )) {
-          printf("\n\n\nNão ha nenhum produto cadastrado no sistema!!!\n");
-          printf("Cadastre algum produto para prosseguir com as vendas\n\n\n");
+    // ~ MENU PRINCIPAL
+    do {
+        menuPrincipal(&opcaoMenu);
+
+        switch (opcaoMenu) {
+            case 1:
+                do {
+                    menuCadastros(&opcaoSubMenu);
+
+                    switch (opcaoSubMenu) {
+                        case 1:
+                            novoUsuarioSistema(&listaUsuarios, &totalUsuarios);
+                            break;
+                        case 2:
+                            novoCliente(&listaClientes, &totalClientes);
+                            break;
+                        case 3:
+                            novoProduto(&listaProdutos, &totalProdutos);
+                            break;
+                    }
+                } while (opcaoSubMenu != 4);
+                break;
+
+
+            case 2:
+                do {
+                    menuVendas(&opcaoSubMenu);
+
+                    switch (opcaoSubMenu) {
+                        case 1:
+                            listaPagamentos = realizarVenda(
+                                listaProdutos, &totalProdutos, listaClientes, 
+                                totalClientes, usuarioLogado, listaPagamentos, 
+                                &totalPagamentos, carrinho);
+                            break;
+
+                        case 2:
+                            sangriaCaixa(&valorCaixa, usuarioLogado, listaUsuarios, totalUsuarios, listaPagamentos, totalPagamentos);
+                            break;
+
+                        case 3:
+                            listarPagamentosAbertos(listaPagamentos, totalPagamentos);
+                            pagarVendaAberta(listaPagamentos, totalPagamentos);
+                            break;
+                    }
+
+                } while (opcaoSubMenu != 4);
+                break;
+
+
+            case 3:
+                abrirCaixa(&valorCaixa, &statusCaixa, usuarioLogado, listaUsuarios, totalUsuarios);
+                break;
+
+
+            case 4:
+                fecharCaixa(valorCaixa, listaPagamentos, totalPagamentos, usuarioLogado, listaUsuarios, totalUsuarios);
+                break;
+
+
+            case 5:
+                do {
+                    menuRelatorios(&opcaoSubMenu);
+
+                    switch (opcaoSubMenu) {
+                        case 1:
+                            listarClientesOrdemAlfabetica(listaClientes, totalClientes);
+                            break;
+                        case 2:
+                            listarClientesQueCompraram(listaPagamentos, totalPagamentos);
+                            break;
+                        case 3:
+                            listarProdutosOrdenados(listaProdutos, totalProdutos);
+                            break;
+                        case 4:
+                            produtosMaisVendidos(listaPagamentos, totalPagamentos);
+                            break;
+                        case 5:
+                            listarVendasPorPeriodo(listaPagamentos, totalPagamentos);
+                            break;
+                        case 6:
+                            faturamentoPorTipoPagamento(listaPagamentos, totalPagamentos);
+                            break;
+                    }
+
+                } while (opcaoSubMenu != 7);
+                break;
+
+
+            case 6:
+                printf("Saindo do sistema...\n");
+
+                // Exportar os dados
+                if (totalUsuarios > 0) exportarUsuariosSistema(listaUsuarios, totalUsuarios);
+                if (totalClientes > 0) exportarClientes(listaClientes, totalClientes);
+                if (totalProdutos > 0) exportarProdutos(listaProdutos, totalProdutos);
+                if (totalPagamentos > 0) exportarPagamentos(listaPagamentos, totalPagamentos);
+
+                break;
+
+            default:
+                printf("Opção inválida.\n");
+                break;
         }
 
-        else if (  isOpenCaixa == 'N'  ) {
-          printf("\n\n\nO caixa do sistema não foi aberto ainda!!!\n");
-          printf("Faça a abertura de caixa para prosseguir com as vendas\n\n\n");
-        }
-
-        else {
-          menuVendas(  &listaPagamentos, carrinhoCompras, &listaProdutos, &opcaoSubMenu, &contadorPagamentos, contadorProdutos, &valorCaixa  );
-        }
-        
-
-        menuPrincipal(  &opcaoMenu  );
-        break;
-     
+    } while (opcaoMenu != 6);
 
 
+    // ~ Liberação de memória
+    free(listaUsuarios);
+    free(listaClientes);
+    free(listaProdutos);
+    free(listaPagamentos);
+    limparCarrinho(carrinho);
+    free(carrinho);
 
-      case 3:
-        // ~ Funções localizada em Menus.c
-        menuAbertCaixa(  &opcaoSubMenu, &valorCaixa, &isOpenCaixa  );
-        menuPrincipal(  &opcaoMenu  );
-        break;
-
-      case 4:
-        menuFechaCaixa(  listaPagamentos, contadorPagamentos, valorCaixa  );
-        menuPrincipal(  &opcaoMenu  );
-        break;
-
-      case 5:
-        menuRelatorios(  listaPagamentos, contadorPagamentos  );
-        menuPrincipal(  &opcaoMenu  );
-        break;
-      
-      default:
-        if (  contadorUsuarios > 0  ) {  exportUsuarios(  listaUsuarios, contadorUsuarios, userData  );  }
-        if (  contadorProdutos > 0  ) {  exportProdutos(  listaProdutos, contadorProdutos, productData  );  }
-        
-        
-        break;
-    } 
-  } while (  opcaoMenu != 6  );
-
-
-  // ~ Essas função no final do codigo serve para liberar o espaço de memoria alocado por uma função realloc, usado
-  // ~ (o que fizemos em Cadastro.c)
-  free(listaUsuarios);
-  free(listaProdutos);
-  free(listaPagamentos);
-  free(carrinhoCompras);
-  return 0;
+    return 0;
 }

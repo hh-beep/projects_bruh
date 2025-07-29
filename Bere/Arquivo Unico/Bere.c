@@ -182,7 +182,7 @@ struct Produto* novoProduto(struct Produto** listaProdutos, int* contadorProduto
     printf("Digite o nome do produto:\n => ");
     scanf(" %[^\n]%*c", produtoAtual->nome);
 
-    // ~ Código
+    // ~ Uhhh, aq ele  faqqz averificação dos coiso  
     while (!codigoValido) {
         printf("Digite o código do produto [1000 a 9999]:\n => ");
         scanf("%d", &produtoAtual->codigo);
@@ -361,7 +361,7 @@ struct Cliente* novoCliente(struct Cliente** listaClientes, int* contadorCliente
     printf("Digite o CPF (somente números):\n => ");
     scanf("%lld", &clienteAtual->cpf);
 
-    // ~ Rua e número
+    // ~ Rua e n úmero
     printf("Digite a rua e o número:\n => ");
     scanf(" %[^\n]%*c", clienteAtual->ruaNumero);
 
@@ -451,6 +451,7 @@ struct Usuario* novoUsuarioSistema(struct Usuario** listaUsuariosSistema, int* t
         printf("Digite o login (8 a 12 caracteres):\n => ");
         scanf("%12s", loginTemp);
 
+        // ~ el tamanho de la streng
         int tam = strlen(loginTemp);
         if (tam < 8 || tam > 12) {
             printf("Login inválido!\n");
@@ -515,6 +516,7 @@ struct Usuario* loginSistema(struct Usuario* listaUsuariosSistema, int totalUsua
     scanf("%8s", senha);
 
     for (int i = 0; i < totalUsuarios; i++) {
+        // ~ strcmp verifica se uma string é ingual outra streng
         if ((strcmp(listaUsuariosSistema[i].login, login) == 0) &&
             (strcmp(listaUsuariosSistema[i].senha, senha) == 0)) {
             printf("Login bem-sucedido.\n");
@@ -745,7 +747,7 @@ void fecharCaixa(float valorCaixa, struct Pagamento* listaPagamentos, int contad
     printf("Abertura de caixa: R$ %.2f\n", valorCaixa);
 
     if (ajuste != 0) {
-        printf("⚠️  Atenção: Divergência de R$ %.2f (%s)\n",
+        printf("Atenção: Divergência de R$ %.2f (%s)\n",
                ajuste, ajuste > 0 ? "SOBRA" : "FALTA");
     } else {
         printf("Caixa fechado corretamente. Sem divergências!\n");
